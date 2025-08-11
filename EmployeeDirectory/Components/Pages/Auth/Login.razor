@@ -1,0 +1,81 @@
+﻿@page "/login"
+
+@using System.Security.Claims
+@using EmployeeDirectory.Models.Data
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using EmployeeDirectory.Models
+
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+
+
+<h3>Login</h3>
+
+<div class="login-form">
+    <EditForm Model="Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+        <DataAnnotationsValidator />
+        <div class="mb-3">
+            <label>Name</label>
+            <InputText @bind-Value="Model.Name" placeholder="Name" />
+            <ValidationMessage For="()=> Model.Name" />
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <InputText @bind-Value="Model.Email" placeholder="Email" />
+            <ValidationMessage For="()=> Model.Email" />
+        </div>
+        <div>
+            <span>@errorMessage</span>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+    </EditForm>
+</div>
+@code {
+    // tell teh system which value to tie to the form
+    [SupplyParameterFromForm]
+    public LoginViewModel Model { get; set; } = new();
+
+    private string errorMessage;
+
+    //called on submit click
+    public async Task Authenticate()
+    {
+
+        // checks if input is null or space
+        if(string.IsNullOrWhiteSpace(Model.Name) || 
+            string.IsNullOrWhiteSpace(Model.Email))
+        {
+            errorMessage = "Invalid User Name or Password";
+            return;
+        }
+
+        // fetches data from database for the employee with matching name
+        var userAccount = DbContext.Employees.Where(X => X.FirstName == Model.Name).FirstOrDefault();
+
+        //checks if information is valid
+        if (userAccount == null || userAccount.Email != Model.Email)
+        {
+            errorMessage = "Account doesn't exist or email missmatch";
+            return;
+        }
+
+        //creates a claim identity
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, Model.Name)
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        await HttpContextAccessor.HttpContext!.SignInAsync(principal);
+        Navigation.NavigateTo("/");
+    }   
+
+}
