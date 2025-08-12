@@ -93,9 +93,6 @@ namespace EmployeeDirectory.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -118,7 +115,6 @@ namespace EmployeeDirectory.Migrations
                             IsActive = true,
                             JobTitleId = 1,
                             LastName = "Selami",
-                            PermissionId = 2,
                             PhoneNumber = "389-70-264-790"
                         },
                         new
@@ -131,8 +127,19 @@ namespace EmployeeDirectory.Migrations
                             IsActive = true,
                             JobTitleId = 3,
                             LastName = "Selami",
-                            PermissionId = 1,
                             PhoneNumber = "389-70-264-760"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            DepartmentId = 2,
+                            Email = "mina@gmail.com",
+                            FirstName = "Mina",
+                            HireDate = new DateTime(2025, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitleId = 3,
+                            LastName = "Selami",
+                            PhoneNumber = "389-70-264-776"
                         });
                 });
 
@@ -192,6 +199,59 @@ namespace EmployeeDirectory.Migrations
                         {
                             Id = 8,
                             Title = "Product Developer"
+                        });
+                });
+
+            modelBuilder.Entity("EmployeeDirectory.Models.UserAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EmployeeID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PermissionID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EmployeeID = 1,
+                            Password = "dijarS",
+                            PermissionID = 2,
+                            UserName = "dijarS"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EmployeeID = 2,
+                            Password = "ardinS",
+                            PermissionID = 1,
+                            UserName = "ardinS"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EmployeeID = 3,
+                            Password = "minaS",
+                            PermissionID = 1,
+                            UserName = "minaS"
                         });
                 });
 

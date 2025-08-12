@@ -6,12 +6,13 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using EmployeeDirectory.Models
+@using EmployeeDirectory.Services
 
 @inject NavigationManager Navigation
 @inject AppDbContext DbContext
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
-
+@inject SignInServices SignInService
 
 <h3>Login</h3>
 
@@ -19,14 +20,14 @@
     <EditForm Model="Model" OnValidSubmit="Authenticate" FormName="LoginForm">
         <DataAnnotationsValidator />
         <div class="mb-3">
-            <label>Name</label>
-            <InputText @bind-Value="Model.Name" placeholder="Name" />
-            <ValidationMessage For="()=> Model.Name" />
+            <label>User Name</label>
+            <InputText @bind-Value="Model.UserName" placeholder="User Name" />
+            <ValidationMessage For="()=> Model.UserName" />
         </div>
         <div class="mb-3">
-            <label>Email</label>
-            <InputText @bind-Value="Model.Email" placeholder="Email" />
-            <ValidationMessage For="()=> Model.Email" />
+            <label>Password</label>
+            <InputText @bind-Value="Model.Password" placeholder="Password" />
+            <ValidationMessage For="()=> Model.Password" />
         </div>
         <div>
             <span>@errorMessage</span>
@@ -48,34 +49,24 @@
     {
 
         // checks if input is null or space
-        if(string.IsNullOrWhiteSpace(Model.Name) || 
-            string.IsNullOrWhiteSpace(Model.Email))
+        if(string.IsNullOrWhiteSpace(Model.UserName) || 
+            string.IsNullOrWhiteSpace(Model.Password))
         {
             errorMessage = "Invalid User Name or Password";
             return;
         }
 
         // fetches data from database for the employee with matching name
-        var userAccount = DbContext.Employees.Where(X => X.FirstName == Model.Name).FirstOrDefault();
+        var userAccount = DbContext.Users.Where(X => X.UserName== Model.UserName).FirstOrDefault();
 
         //checks if information is valid
-        if (userAccount == null || userAccount.Email != Model.Email)
+        if (userAccount == null || userAccount.Password!= Model.Password)
         {
-            errorMessage = "Account doesn't exist or email missmatch";
+            errorMessage = "Account doesn't exist or password missmatch";
             return;
         }
 
-        //creates a claim identity
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, Model.Name)
-        };
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-        await HttpContextAccessor.HttpContext!.SignInAsync(principal);
-        Navigation.NavigateTo("/");
+        await SignInService.UserSignInAsync(Model, userAccount);
     }   
 
 }

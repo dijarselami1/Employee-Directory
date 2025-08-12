@@ -20,14 +20,10 @@ namespace EmployeeDirectory.Models
         public DateTime HireDate { get; set; }
 
         public int DepartmentId { get; set; } // Foreign Key
-        //public Department Department { get; set; } // Navigation property
+        //public Department Department { get; set; } = // Navigation property
 
         public int JobTitleId { get; set; }   // Foreign Key
         //public JobTitle JobTitle { get; set; } // Navigation property
-
-        public int PermissionId {  get; set; }  //Foregin Key
-        //public UserPermission UserPermission{ get; set; } // Navigation property
-
 
         public byte[]? ProfilePhoto { get; set; } // Nullable
 

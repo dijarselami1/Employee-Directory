@@ -1,0 +1,66 @@
+﻿@page "/users-info"
+
+@using System.ComponentModel.DataAnnotations
+@using Telerik.DataSource.Extensions;
+@using Telerik.DataSource
+@using Microsoft.AspNetCore.Authorization
+@using EmployeeDirectory.Models.Data
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext DbContext
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = "Position")]
+
+
+
+<h3>Employees</h3>
+
+@if (DbContext.Users == null)
+{
+    <p>No users</p>
+}
+else
+{
+    <TelerikGrid TItem="UserAccount"
+                 OnRead="@readItems"
+                 Height="300px"
+                 EditMode="@GridEditMode.Inline"
+                 OnUpdate="@OnGridUpdate">
+        <GridColumns>
+
+            <GridColumn Field="@nameof(UserAccount.Id)" Title="ID" Editable="false" />
+            <GridColumn Field="@nameof(UserAccount.UserName)" Title="User Name" />
+            <GridColumn Field="@nameof(UserAccount.Password)" Title="Password" />
+            <GridColumn Field="@nameof(UserAccount.EmployeeID)" Title="Employee ID" />
+            <GridColumn Field="@nameof(UserAccount.PermissionID)" Title="Permission ID" />
+            <GridCommandColumn Width="180px">
+                <GridCommandButton Command="Edit">Edit</GridCommandButton>
+                <GridCommandButton Command="Save" ShowInEdit="true">Save</GridCommandButton>
+            </GridCommandColumn>
+            @* <GridColumn Field="@DbContext.Departments.Where(X=> X.Id == userCurr[0].DepartmentId).FirstOrDefault().Name" Title="Department" /> *@
+            @* <GridColumn Field="@DbContext.JobTitles.Where(X=> X.Id == userCurr[0].JobTitleId).FirstOrDefault().Title" Title="Job Title" /> *@
+        </GridColumns>
+    </TelerikGrid>
+}
+
+@code {
+    // makes this list so telerik can read from list even though its one user
+
+    // Built-in methods to read data to table
+    private void readItems(GridReadEventArgs args)
+    {
+        var datasourceResults = DbContext.Users.ToDataSourceResult(args.Request);
+        args.Data = datasourceResults.Data;
+        args.Total = datasourceResults.Total;
+    }
+
+    private void OnGridUpdate(GridCommandEventArgs args)
+    {
+        //builtin method of telerik gets updated items from grid
+        var updatedItem = (Employee)args.Item;
+        
+        // update user account and claim identity
+    }
+
+    
+}

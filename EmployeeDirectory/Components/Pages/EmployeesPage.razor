@@ -1,6 +1,84 @@
 ﻿@page "/employees-page"
-<h3>EmployeesPage</h3>
+@using System.ComponentModel.DataAnnotations
+@using Telerik.DataSource.Extensions;
+@using Telerik.DataSource
+@using Microsoft.AspNetCore.Authorization
+@using EmployeeDirectory.Models.Data
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+@inject AppDbContext DbContext
+@rendermode InteractiveServer
+
+
+
+<h3>Employees</h3>
+
+@if (userCurr == null)
+{
+    <p>Loading profile...</p>
+}
+else
+{
+    <TelerikGrid TItem="Employee"
+                 OnRead="@readItems"
+                 Height="100px"
+                 EditMode="@GridEditMode.Inline"
+                 OnUpdate="@OnGridUpdate">
+        <GridColumns>
+
+            <GridColumn Field="@nameof(Employee.Id)" Title="ID" Editable="false" />
+            <GridColumn Field="@nameof(Employee.FirstName)" Title="Name" />
+            <GridColumn Field="@nameof(Employee.LastName)" Title="Surname" />
+            <GridColumn Field="@nameof(Employee.Email)" Title="Email" />
+            <GridColumn Field="@nameof(Employee.PhoneNumber)" Title="Phone" />
+            <GridColumn Field="@nameof(Employee.ProfilePhoto)" Title="Photo" />
+            <GridCommandColumn Width="180px">
+                <GridCommandButton Command="Edit">Edit</GridCommandButton>
+                <GridCommandButton Command="Save" ShowInEdit="true">Save</GridCommandButton>
+            </GridCommandColumn>
+            @* <GridColumn Field="@DbContext.Departments.Where(X=> X.Id == userCurr[0].DepartmentId).FirstOrDefault().Name" Title="Department" /> *@
+            @* <GridColumn Field="@DbContext.JobTitles.Where(X=> X.Id == userCurr[0].JobTitleId).FirstOrDefault().Title" Title="Job Title" /> *@
+        </GridColumns>
+    </TelerikGrid>
+}
 
 @code {
+    // makes this list so telerik can read from list even though its one user
+    private UserAccount userCurr;
+    private List<Employee> employeeCurr;
+    //
+    protected override void OnInitialized()
+    {
+        employeeCurr = new List<Employee>();
+        var connectedClaims = HttpContextAccessor.HttpContext.User.Claims.ToList();
+        userCurr = DbContext.Users.Where(X => X.UserName == connectedClaims[0].Value).FirstOrDefault();
+        employeeCurr.Add(DbContext.Employees.Where(X => X.Id == userCurr.EmployeeID).FirstOrDefault());
+    }
+    // Built-in methods to read data to table
+    private void readItems(GridReadEventArgs args)
+    {
+        var datasourceResults = employeeCurr.ToDataSourceResult(args.Request);
+        args.Data = datasourceResults.Data;
+        args.Total = datasourceResults.Total;
+    }
+
+    private void OnGridUpdate(GridCommandEventArgs args)
+    {
+        //builtin method of telerik gets updated items from grid
+        var updatedItem = (Employee)args.Item;
+        //fetch the user from DB
+        var userDb = DbContext.Employees.Where(X => X.Id == updatedItem.Id).FirstOrDefault();
+        //update user
+        if (userDb != null)
+        {
+            userDb.FirstName = updatedItem.FirstName;
+            userDb.LastName = updatedItem.LastName;
+            userDb.Email = updatedItem.Email;
+            userDb.PhoneNumber = updatedItem.PhoneNumber;
+
+        }
+        DbContext.SaveChanges();
+    }
+
 
 }

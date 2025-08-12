@@ -14,12 +14,13 @@ public class AppDbContext : DbContext
     public DbSet<Employee> Employees { get; set; } 
     public DbSet<JobTitle> JobTitles { get; set; }
     public DbSet<Department> Departments { get; set; }
+    public DbSet<UserAccount> Users { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<UserPermission>().HasData(
-            new UserPermission { Id = 1, Position="Employee" },
-            new UserPermission { Id = 2, Position= "Administrator" }
+            new UserPermission { Id = 1, Position = "Employee" },
+            new UserPermission { Id = 2, Position = "Administrator" }
             );
 
         modelBuilder.Entity<JobTitle>().HasData(
@@ -34,10 +35,10 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<Department>().HasData(
-            new Department { Id = 1,Name="HR" },
-            new Department { Id = 2,Name= "IT" },
-            new Department { Id = 3,Name= "Marketing" },
-            new Department { Id = 4,Name= "R&D" }
+            new Department { Id = 1, Name = "HR" },
+            new Department { Id = 2, Name = "IT" },
+            new Department { Id = 3, Name = "Marketing" },
+            new Department { Id = 4, Name = "R&D" }
         );
         modelBuilder.Entity<Employee>().HasData(
             new Employee
@@ -50,7 +51,6 @@ public class AppDbContext : DbContext
                 HireDate = new DateTime(2020, 1, 15),
                 DepartmentId = 1,
                 JobTitleId = 1,
-                PermissionId = 2,
                 ProfilePhoto = null,
                 IsActive = true
             }
@@ -66,10 +66,55 @@ public class AppDbContext : DbContext
                 HireDate = new DateTime(2025, 1, 15),
                 DepartmentId = 2,
                 JobTitleId = 3,
-                PermissionId = 1,
                 ProfilePhoto = null,
                 IsActive = true
             }
         );
+        modelBuilder.Entity<Employee>().HasData(
+           new Employee
+           {
+               Id = 3,
+               FirstName = "Mina",
+               LastName = "Selami",
+               Email = "mina@gmail.com",
+               PhoneNumber = "389-70-264-776",
+               HireDate = new DateTime(2025, 1, 15),
+               DepartmentId = 2,
+               JobTitleId = 3,
+               ProfilePhoto = null,
+               IsActive = true
+           }
+       );
+        modelBuilder.Entity<UserAccount>().HasData(
+            new UserAccount
+            {
+                Id =1,
+                UserName = "dijarS",
+                Password = "dijarS",
+                PermissionID = 2,
+                EmployeeID = 1,
+            }
+        );
+        modelBuilder.Entity<UserAccount>().HasData(
+            new UserAccount
+            {
+                Id = 2,
+                UserName = "ardinS",
+                Password = "ardinS",
+                PermissionID = 1,
+                EmployeeID = 2,
+            }
+        );
+        modelBuilder.Entity<UserAccount>().HasData(
+            new UserAccount
+            {
+                Id = 3 ,
+                UserName = "minaS",
+                Password = "minaS",
+                PermissionID = 1,
+                EmployeeID = 3,
+            }
+        );
+
     }
 }
