@@ -1,13 +1,18 @@
 ﻿@page "/users-info"
 
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
 @using Telerik.DataSource.Extensions;
 @using Telerik.DataSource
 @using Microsoft.AspNetCore.Authorization
 @using EmployeeDirectory.Models.Data
+@using EmployeeDirectory.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext DbContext
+@inject SignInServices SignInService
+
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Position")]
 
@@ -32,7 +37,7 @@ else
             <GridColumn Field="@nameof(UserAccount.UserName)" Title="User Name" />
             <GridColumn Field="@nameof(UserAccount.Password)" Title="Password" />
             <GridColumn Field="@nameof(UserAccount.EmployeeID)" Title="Employee ID" />
-            <GridColumn Field="@nameof(UserAccount.PermissionID)" Title="Permission ID" />
+            <GridColumn Field="@nameof(UserAccount.PermissionID)" Title="Permission ID" Editable="false"/>
             <GridCommandColumn Width="180px">
                 <GridCommandButton Command="Edit">Edit</GridCommandButton>
                 <GridCommandButton Command="Save" ShowInEdit="true">Save</GridCommandButton>
@@ -44,22 +49,47 @@ else
 }
 
 @code {
-    // makes this list so telerik can read from list even though its one user
 
-    // Built-in methods to read data to table
+    [Inject]
+    private NavigationManager Navigation { get; set; }
+
+
     private void readItems(GridReadEventArgs args)
     {
         var datasourceResults = DbContext.Users.ToDataSourceResult(args.Request);
         args.Data = datasourceResults.Data;
         args.Total = datasourceResults.Total;
+        var item = HttpContextAccessor.HttpContext.User.Claims;
+
     }
 
-    private void OnGridUpdate(GridCommandEventArgs args)
+    private async Task OnGridUpdate(GridCommandEventArgs args)
     {
         //builtin method of telerik gets updated items from grid
-        var updatedItem = (Employee)args.Item;
-        
+        var updatedItem = (UserAccount)args.Item;
         // update user account and claim identity
+        var userDb = DbContext.Users.Where(X => X.Id == updatedItem.Id).FirstOrDefault();
+        //update user
+
+        try
+        {
+            if (userDb != null)
+            {
+                userDb.UserName = updatedItem.UserName;
+                userDb.Password = updatedItem.Password;
+                userDb.EmployeeID = updatedItem.EmployeeID;
+            }
+            DbContext.SaveChanges();
+            // await SignInService.UserSignInAsync(userDb);
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+
+            // var sstate = HttpContextAccessor.HttpContext.User.Identity;
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+        var authstate = HttpContextAccessor.HttpContext.User.Identity;
     }
 
     

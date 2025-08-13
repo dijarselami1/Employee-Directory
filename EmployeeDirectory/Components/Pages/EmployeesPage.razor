@@ -2,28 +2,38 @@
 @using System.ComponentModel.DataAnnotations
 @using Telerik.DataSource.Extensions;
 @using Telerik.DataSource
+
 @using Microsoft.AspNetCore.Authorization
 @using EmployeeDirectory.Models.Data
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext DbContext
+@inject IAuthorizationService AuthorizationService
+@inject NavigationManager navigation
 @rendermode InteractiveServer
 
 
 
 <h3>Employees</h3>
 
-@if (userCurr == null)
+@if (employeeCurr == null)
 {
     <p>Loading profile...</p>
 }
 else
 {
+
+    <TelerikButton OnClick="@( ()=>addUser())"
+                Class="popup-target">Show Popup</TelerikButton>
+
+
+
     <TelerikGrid TItem="Employee"
                  OnRead="@readItems"
-                 Height="100px"
+                 Height="400px"
                  EditMode="@GridEditMode.Inline"
                  OnUpdate="@OnGridUpdate">
+                         
         <GridColumns>
 
             <GridColumn Field="@nameof(Employee.Id)" Title="ID" Editable="false" />
@@ -44,15 +54,34 @@ else
 
 @code {
     // makes this list so telerik can read from list even though its one user
+    private TelerikPopup? PopupRef { get; set; }
+
     private UserAccount userCurr;
     private List<Employee> employeeCurr;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
     //
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         employeeCurr = new List<Employee>();
-        var connectedClaims = HttpContextAccessor.HttpContext.User.Claims.ToList();
-        userCurr = DbContext.Users.Where(X => X.UserName == connectedClaims[0].Value).FirstOrDefault();
-        employeeCurr.Add(DbContext.Employees.Where(X => X.Id == userCurr.EmployeeID).FirstOrDefault());
+
+        var authenticationState = await authenticationStateTask;
+        var user = authenticationState.User;
+
+        var authResult = await AuthorizationService.AuthorizeAsync(user, "Position");
+
+        if (authResult.Succeeded)
+        {
+            employeeCurr = DbContext.Employees.ToList();
+        }
+        else
+        {
+            var connectedClaims = HttpContextAccessor.HttpContext.User.Claims.ToList();
+            userCurr = DbContext.Users.Where(X => X.UserName == connectedClaims[0].Value).FirstOrDefault();
+            employeeCurr.Add(DbContext.Employees.Where(X => X.Id == userCurr.EmployeeID).FirstOrDefault());
+
+        }
     }
     // Built-in methods to read data to table
     private void readItems(GridReadEventArgs args)
@@ -78,6 +107,10 @@ else
 
         }
         DbContext.SaveChanges();
+    }
+    private void addUser()
+    {
+        navigation.NavigateTo("/add-user");
     }
 
 

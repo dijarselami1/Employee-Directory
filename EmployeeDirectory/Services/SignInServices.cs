@@ -26,11 +26,11 @@ namespace EmployeeDirectory.Services
             _httpContextAccessor = httpContextAccessor;
             _navigation = navigation;
         }
-        public async Task UserSignInAsync(LoginViewModel Model, UserAccount userAccount)
+        public async Task UserSignInAsync( UserAccount userAccount)
         {
             var claims = new List<Claim>
             {
-            new Claim(ClaimTypes.Name, Model.UserName)
+            new Claim(ClaimTypes.Name, userAccount.UserName)
             };
 
             //Add policies
@@ -44,7 +44,7 @@ namespace EmployeeDirectory.Services
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await httpContext!.SignInAsync(principal);
-            navigation.NavigateTo("/");
+            //navigation.NavigateTo("/");
         }
     }
 }

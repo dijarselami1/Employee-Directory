@@ -3,7 +3,9 @@ using EmployeeDirectory.Models;
 using EmployeeDirectory.Models.Data;
 using EmployeeDirectory.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Position", cfg =>
         cfg.RequireClaim("Position", "Administrator"));
 });
+
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
