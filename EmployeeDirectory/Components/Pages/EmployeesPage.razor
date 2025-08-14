@@ -22,16 +22,16 @@
 }
 else
 {
-
+<TelerikRootComponent>
     <TelerikButton OnClick="@( ()=>addUser())"
-                Class="popup-target">Show Popup</TelerikButton>
+                Class="popup-target" >Add New User</TelerikButton>
 
 
 
     <TelerikGrid TItem="Employee"
                  OnRead="@readItems"
                  Height="400px"
-                 EditMode="@GridEditMode.Inline"
+                 EditMode="@GridEditMode.Popup"
                  OnUpdate="@OnGridUpdate">
                          
         <GridColumns>
@@ -50,6 +50,7 @@ else
             @* <GridColumn Field="@DbContext.JobTitles.Where(X=> X.Id == userCurr[0].JobTitleId).FirstOrDefault().Title" Title="Job Title" /> *@
         </GridColumns>
     </TelerikGrid>
+</TelerikRootComponent>
 }
 
 @code {

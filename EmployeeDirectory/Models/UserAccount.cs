@@ -8,10 +8,10 @@ namespace EmployeeDirectory.Models
         [Key]
         public int Id { get; set; }
         [Required]
-        public string UserName { get; set; } = String.Empty;
+        public string UserName { get; set; } 
         [Required]
 
-        public string Password { get; set; }= string.Empty;
+        public string Password { get; set; }
         [Required]
 
         public int PermissionID { get; set; }

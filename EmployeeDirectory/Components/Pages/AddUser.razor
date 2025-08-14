@@ -1,109 +1,80 @@
 ﻿@page "/add-user"
-
+@using Telerik.DataSource.Extensions;
+@using Telerik.DataSource
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
 @using EmployeeDirectory.Models.Data
 @using EmployeeDirectory.Models
-@rendermode InteractiveServer
+@using Telerik.Blazor.Components
 @inject AppDbContext DbContext
-
-@attribute [Authorize(Policy = "Position")]
-
-<h3>Add User</h3>
-
-@if (addNewUser != null)
-{
-    <TelerikForm Model="@addNewUser" OnValidSubmit="@AddUserDb" Columns="2" ColumnSpacing="24px">
-        <FormValidation>
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-        </FormValidation>
-
-        <FormItems>
-            <FormGroup LabelText="Employee Info">
-                <FormItem Field="@nameof(addNewUser.Employee.FirstName)" EditorType="@FormEditorType.TextBox" LabelText="First Name" />
-                <FormItem Field="@nameof(addNewUser.Employee.LastName)" EditorType="@FormEditorType.TextBox" LabelText="Last Name" />
-                <FormItem Field="@nameof(addNewUser.Employee.Email)" EditorType="@FormEditorType.TextBox" LabelText="Email" />
-                <FormItem Field="@nameof(addNewUser.Employee.PhoneNumber)" EditorType="@FormEditorType.TextBox" LabelText="Phone Number" />
-                <FormItem Field="@nameof(addNewUser.Employee.HireDate)" EditorType="@FormEditorType.DatePicker" LabelText="Hire Date" />
-
-                <FormItem Field="@nameof(addNewUser.Employee.DepartmentId)" LabelText="Department ID">
-                    <Template>
-                        <TelerikNumericTextBox @bind-Value="addNewUser.Employee.DepartmentId" Min="0" />
-                    </Template>
-                </FormItem>
-
-                <FormItem Field="@nameof(addNewUser.Employee.JobTitleId)" LabelText="Job Title ID">
-                    <Template>
-                        <TelerikNumericTextBox @bind-Value="addNewUser.Employee.JobTitleId" Min="0" />
-                    </Template>
-                </FormItem>
-
-                <FormItem Field="@nameof(addNewUser.Employee.IsActive)" EditorType="@FormEditorType.CheckBox" LabelText="Is Active" />
-            </FormGroup>
-
-            <FormGroup LabelText="User Account Info">
-                <FormItem Field="@nameof(addNewUser.UserAccount.UserName)" EditorType="@FormEditorType.TextBox" LabelText="User Name" />
-                <FormItem Field="@nameof(addNewUser.UserAccount.Password)" EditorType="@FormEditorType.TextBox" LabelText="Password" />
-                @* EmployeeID is set programmatically after saving the Employee *@
-            </FormGroup>
-        </FormItems>
-
-        <FormButtons>
-            <TelerikButton ButtonType="ButtonType.Submit" ThemeColor="primary">Submit</TelerikButton>
-        </FormButtons>
-    </TelerikForm>
-
-    @if (!string.IsNullOrEmpty(successMessage))
+@rendermode InteractiveServer
+<TelerikRootComponent>
+    @if (ValidSubmit)
     {
-        <p style="color: green">@successMessage</p>
+        <div class="success-alert">
+            The form was submitted successfully.
+        </div>
     }
-}
+    else
+    {
 
+        <TelerikForm Model="@newEmployee"
+                OnValidSubmit="@handleValidSubmit"
+                OnInvalidSubmit="@HandleInvalidSubmit">
+            <FormValidation>
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+            </FormValidation>
+            <FormItems>
+                <FormItem Field="@nameof(newEmployee.FirstName)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.LastName)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.Email)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.PhoneNumber)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.DepartmentId)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.JobTitleId)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.HireDate)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.IsActive)"></FormItem>
+            </FormItems>
+        </TelerikForm>
+    }
+</TelerikRootComponent>
 @code {
-
-    private AddUserViewModel addNewUser = new AddUserViewModel
-    {
-        Employee = new Employee(),
-        UserAccount = new UserAccount()
-    };
-
-    private string successMessage = "";
-
-    public class AddUserViewModel
-    {
-        public UserAccount UserAccount { get; set; }
-        public Employee Employee { get; set; }
-    }
-
-    private void AddUserDb()
+    public bool ValidSubmit { get; set; } = false;
+    private Employee newEmployee = new Employee();
+    private UserAccount newUserAccount = new UserAccount();
+    private async Task handleValidSubmit()
     {
         try
         {
-            // Add the Employee first
-            DbContext.Employees.Add(addNewUser.Employee);
-            DbContext.SaveChanges();
+            var nextId = DbContext.Users.Any() ? DbContext.Users.Max(u => u.Id) + 1 : 1;
 
-            // Set the generated Employee.Id to UserAccount.EmployeeID
-            addNewUser.UserAccount.EmployeeID = addNewUser.Employee.Id;
-            addNewUser.UserAccount.PermissionID = 1; // example default permission id
-            
-            // Add the UserAccount
-            DbContext.Users.Add(addNewUser.UserAccount);
-            DbContext.SaveChanges();
+            ValidSubmit = true;
+            DbContext.Employees.Add(newEmployee); 
+            await DbContext.SaveChangesAsync();
+            //create automatic username pw for user
 
-            successMessage = "User and Employee added successfully!";
+            string username_pw = newEmployee.FirstName.ToLower() + newEmployee.LastName[0];
+            newUserAccount.UserName = username_pw;
+            newUserAccount.Password = username_pw;
+            newUserAccount.EmployeeID = newEmployee.Id;
+            newUserAccount.PermissionID = 1;
+            DbContext.Users.Add(newUserAccount);
+            await DbContext.SaveChangesAsync();
 
-            // Reset form model for new entry
-            addNewUser = new AddUserViewModel
-                {
-                    Employee = new Employee(),
-                    UserAccount = new UserAccount()
-                };
+            ValidSubmit = false;
+
         }
         catch (Exception ex)
         {
-            successMessage = $"Error: {ex.Message}";
+            // Log the exception or handle it appropriately
+            ValidSubmit = false;
+            StateHasChanged();
+            Console.WriteLine($"Error: {ex.Message}");
+            // Consider showing an error message to the user
         }
+
+    }
+    void HandleInvalidSubmit()
+    {
+        ValidSubmit = false;
     }
 }

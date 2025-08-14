@@ -18,7 +18,7 @@
 
 
 
-<h3>Employees</h3>
+<h3>Users</h3>
 
 @if (DbContext.Users == null)
 {
@@ -35,7 +35,6 @@ else
 
             <GridColumn Field="@nameof(UserAccount.Id)" Title="ID" Editable="false" />
             <GridColumn Field="@nameof(UserAccount.UserName)" Title="User Name" />
-            <GridColumn Field="@nameof(UserAccount.Password)" Title="Password" />
             <GridColumn Field="@nameof(UserAccount.EmployeeID)" Title="Employee ID" />
             <GridColumn Field="@nameof(UserAccount.PermissionID)" Title="Permission ID" Editable="false"/>
             <GridCommandColumn Width="180px">
