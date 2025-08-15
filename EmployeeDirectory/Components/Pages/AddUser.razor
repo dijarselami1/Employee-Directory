@@ -6,8 +6,12 @@
 @using EmployeeDirectory.Models.Data
 @using EmployeeDirectory.Models
 @using Telerik.Blazor.Components
+@using EmployeeDirectory.Services
+@inject IHttpContextAccessor HttpContextAccessor
 @inject AppDbContext DbContext
 @rendermode InteractiveServer
+
+
 <TelerikRootComponent>
     @if (ValidSubmit)
     {
@@ -29,8 +33,44 @@
                 <FormItem Field="@nameof(newEmployee.LastName)"></FormItem>
                 <FormItem Field="@nameof(newEmployee.Email)"></FormItem>
                 <FormItem Field="@nameof(newEmployee.PhoneNumber)"></FormItem>
-                <FormItem Field="@nameof(newEmployee.DepartmentId)"></FormItem>
-                <FormItem Field="@nameof(newEmployee.JobTitleId)"></FormItem>
+                <FormItem Field="@nameof(newEmployee.DepartmentId)">
+                    <Template>
+
+                        <TelerikDropDownList Data="@departmentDropDown"
+                                             TItem="@Department"
+                                             TValue="@int"
+                                             @bind-Value="newEmployee.DepartmentId"
+                                             TextField="@nameof(Department.Name)"
+                                             ValueField="@nameof(Department.Id)"
+                                             AdaptiveMode="@AdaptiveMode.Auto">
+                        </TelerikDropDownList>
+                    </Template>
+
+                </FormItem>
+                <FormItem Field="@nameof(newEmployee.JobTitleId)" >
+                    <Template>
+
+                        <TelerikDropDownList  
+                                Data="@jobTitles"
+                                TItem="@JobTitle"
+                                TValue="@int" 
+                                @bind-Value="newEmployee.JobTitleId"
+                                TextField="@nameof(JobTitle.Title)"
+                                ValueField="@nameof(JobTitle.Id)"
+                                AdaptiveMode="@AdaptiveMode.Auto">
+                        </TelerikDropDownList>
+
+                    </Template>
+                </FormItem>
+                <FormItem Field="@nameof(newEmployee.ProfilePhoto)">
+                    <Template>
+                    <TelerikUpload SaveUrl="/api/upload/save"
+                                   RemoveUrl="/api/upload/remove"
+                                   AllowedExtensions="@AllowedFileTypes"
+                                   MaxFileSize="@MaxFileSize"
+                                       />
+                    </Template>
+                </FormItem>
                 <FormItem Field="@nameof(newEmployee.HireDate)"></FormItem>
                 <FormItem Field="@nameof(newEmployee.IsActive)"></FormItem>
             </FormItems>
@@ -38,16 +78,40 @@
     }
 </TelerikRootComponent>
 @code {
+    private List<string> AllowedFileTypes { get; set; } = new List<string>() { ".jpg", ".jpeg", ".png", ".gif" };
+    private int MaxFileSize { get; set; } = 10 * 1024 * 1024; // 10 
+
+
     public bool ValidSubmit { get; set; } = false;
     private Employee newEmployee = new Employee();
     private UserAccount newUserAccount = new UserAccount();
+
+
+    private IEnumerable<JobTitle> jobTitles;
+    private IEnumerable<Department> departmentDropDown;    
+
+
+
+    protected override void OnInitialized()
+    {
+        jobTitles = DbContext.JobTitles.ToList();
+        departmentDropDown = DbContext.Departments.ToList();
+    }
+
     private async Task handleValidSubmit()
     {
         try
         {
-            var nextId = DbContext.Users.Any() ? DbContext.Users.Max(u => u.Id) + 1 : 1;
+            if (HttpContextAccessor.HttpContext?.Session?.TryGetValue("UploadedPhoto", out var photoBytes) == true)
+            {
+                newEmployee.ProfilePhoto = photoBytes;
+            }
+
+
+           
 
             ValidSubmit = true;
+            await Task.Delay(200);
             DbContext.Employees.Add(newEmployee); 
             await DbContext.SaveChangesAsync();
             //create automatic username pw for user
@@ -60,6 +124,8 @@
             DbContext.Users.Add(newUserAccount);
             await DbContext.SaveChangesAsync();
 
+            newUserAccount = new UserAccount();
+            newEmployee = new Employee();
             ValidSubmit = false;
 
         }
@@ -77,4 +143,5 @@
     {
         ValidSubmit = false;
     }
+    
 }

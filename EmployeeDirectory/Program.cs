@@ -22,6 +22,10 @@ builder.Services.AddAuthorization(options =>
         cfg.RequireClaim("Position", "Administrator"));
 });
 
+builder.Services.AddControllers();
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -36,6 +40,7 @@ builder.Services.AddTelerikBlazor();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
+app.MapControllers();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -44,6 +49,7 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();

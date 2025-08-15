@@ -32,7 +32,93 @@ else
                  OnRead="@readItems"
                  Height="400px"
                  EditMode="@GridEditMode.Popup"
-                 OnUpdate="@OnGridUpdate">
+                 OnEdit="@OnGridEdit"
+                 OnUpdate="@OnGridUpdate"
+                 Sortable="true"
+                >
+        <GridSettings>
+            <GridPopupEditSettings Title="Popup Title" MaxHeight="95vh" MaxWidth="95vw"></GridPopupEditSettings>
+            <GridPopupEditFormSettings ColumnSpacing="20px" Orientation="@FormOrientation.Horizontal" Columns="2">
+                    <FormTemplate Context="employee">
+                        @* cast once to local variable *@
+                        @{
+                            var emp = (Employee)employee.Item;
+                        }
+
+                        <TelerikForm Model="editEmployee">
+                            <FormItems>
+                                <FormItem Field="@nameof(Employee.FirstName)" LabelText="First Name" />
+                                <FormItem Field="@nameof(Employee.LastName)" LabelText="Last Name" />
+                                <FormItem Field="@nameof(Employee.Email)" LabelText="Email" />
+                                <FormItem Field="@nameof(Employee.PhoneNumber)" LabelText="Phone Number" />
+
+                                <FormItem Field="@nameof(Employee.DepartmentId)" LabelText="Department ID">
+                                    <Template>
+                                        <TelerikDropDownList Data="@departmentDropDown"
+                                                             TItem="@Department"
+                                                             TValue="int"
+                                                             @bind-Value="(editEmployee.DepartmentId)"
+                                                             TextField="@nameof(Department.Name)"
+                                                             ValueField="@nameof(Department.Id)"
+                                                             AdaptiveMode="@AdaptiveMode.Auto">
+                                        </TelerikDropDownList>
+                                    </Template>
+                                </FormItem>
+
+                                <FormItem Field="@nameof(Employee.JobTitleId)" LabelText="Job Title ID">
+                                    <Template>
+                                        <TelerikDropDownList Data="@jobTitles"
+                                                             TItem="@JobTitle"
+                                                             TValue="int"
+                                                             @bind-Value="(editEmployee.JobTitleId)"
+                                                             TextField="@nameof(JobTitle.Title)"
+                                                             ValueField="@nameof(JobTitle.Id)"
+                                                             AdaptiveMode="@AdaptiveMode.Auto">
+                                        </TelerikDropDownList>
+                                    </Template>
+                                </FormItem>
+
+                                <FormItem Field="@nameof(Employee.IsActive)" LabelText="Is Active" />
+                                <FormItem Field="@nameof(Employee.HireDate)" LabelText="Hire Date" />
+
+                                <FormItem Field="@nameof(Employee.ProfilePhoto)" LabelText="Photo">
+                                    <Template>
+                                        @if (emp.ProfilePhoto?.Length > 0)
+                                        {
+                                            <img src="@GetImageSrc(emp.ProfilePhoto)" alt="Profile Photo" style="max-height:80px;" />
+                                        }
+                                        else
+                                        {
+                                            <span>No Photo</span>
+                                        }
+                                    </Template>
+                                </FormItem>
+                            </FormItems>
+                        </TelerikForm>
+                    </FormTemplate>
+                <ButtonsTemplate>
+                    @{
+                        <GridCommandButton Command="Save">
+                              <span>Update Item</span>
+                         </GridCommandButton>
+
+                        <GridCommandButton Command="Cancel">
+                           
+                                <span>Cancel Update</span>
+                            
+                        </GridCommandButton>
+
+                        <GridCommandButton Command="">
+                            @if (!context.IsNew)
+                            {
+                                <span>Print Profile</span>
+                            }
+                           
+                        </GridCommandButton>
+                    }
+                </ButtonsTemplate>
+            </GridPopupEditFormSettings>
+        </GridSettings>
                          
         <GridColumns>
 
@@ -41,13 +127,18 @@ else
             <GridColumn Field="@nameof(Employee.LastName)" Title="Surname" />
             <GridColumn Field="@nameof(Employee.Email)" Title="Email" />
             <GridColumn Field="@nameof(Employee.PhoneNumber)" Title="Phone" />
-            <GridColumn Field="@nameof(Employee.ProfilePhoto)" Title="Photo" />
+            <GridColumn Field="@nameof(Employee.DepartmentId)" Title="Department ID" />
+            <GridColumn Field="@nameof(Employee.JobTitleId)" Title="Job ID" />
+
+            
+
             <GridCommandColumn Width="180px">
+
                 <GridCommandButton Command="Edit">Edit</GridCommandButton>
                 <GridCommandButton Command="Save" ShowInEdit="true">Save</GridCommandButton>
+
             </GridCommandColumn>
-            @* <GridColumn Field="@DbContext.Departments.Where(X=> X.Id == userCurr[0].DepartmentId).FirstOrDefault().Name" Title="Department" /> *@
-            @* <GridColumn Field="@DbContext.JobTitles.Where(X=> X.Id == userCurr[0].JobTitleId).FirstOrDefault().Title" Title="Job Title" /> *@
+           
         </GridColumns>
     </TelerikGrid>
 </TelerikRootComponent>
@@ -56,15 +147,19 @@ else
 @code {
     // makes this list so telerik can read from list even though its one user
     private TelerikPopup? PopupRef { get; set; }
-
+    private Employee editEmployee = new Employee();
     private UserAccount userCurr;
     private List<Employee> employeeCurr;
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
 
-    //
+    private IEnumerable<Department> departmentDropDown;
+    private IEnumerable<JobTitle> jobTitles;
+
     protected override async Task OnInitializedAsync()
     {
+        jobTitles = DbContext.JobTitles.ToList();
+        departmentDropDown = DbContext.Departments.ToList();
         employeeCurr = new List<Employee>();
 
         var authenticationState = await authenticationStateTask;
@@ -94,25 +189,46 @@ else
 
     private void OnGridUpdate(GridCommandEventArgs args)
     {
-        //builtin method of telerik gets updated items from grid
-        var updatedItem = (Employee)args.Item;
-        //fetch the user from DB
-        var userDb = DbContext.Employees.Where(X => X.Id == updatedItem.Id).FirstOrDefault();
-        //update user
+        var userDb = DbContext.Employees.FirstOrDefault(x => x.Id == editEmployee.Id);
         if (userDb != null)
         {
-            userDb.FirstName = updatedItem.FirstName;
-            userDb.LastName = updatedItem.LastName;
-            userDb.Email = updatedItem.Email;
-            userDb.PhoneNumber = updatedItem.PhoneNumber;
+            userDb.FirstName = editEmployee.FirstName;
+            userDb.LastName = editEmployee.LastName;
+            userDb.Email = editEmployee.Email;
+            userDb.PhoneNumber = editEmployee.PhoneNumber;
+            userDb.DepartmentId = editEmployee.DepartmentId;
+            userDb.JobTitleId = editEmployee.JobTitleId;
+            userDb.HireDate = editEmployee.HireDate;
+            userDb.IsActive = editEmployee.IsActive;
 
+            DbContext.SaveChanges();
         }
-        DbContext.SaveChanges();
+    }
+    private void OnGridEdit(GridCommandEventArgs args)
+    {
+        var original = (Employee)args.Item;
+        editEmployee = new Employee
+            {
+                Id = original.Id,
+                FirstName = original.FirstName,
+                LastName = original.LastName,
+                Email = original.Email,
+                PhoneNumber = original.PhoneNumber,
+                DepartmentId = original.DepartmentId,
+                JobTitleId = original.JobTitleId,
+                HireDate = original.HireDate,
+                IsActive = original.IsActive,
+                ProfilePhoto = original.ProfilePhoto
+            };
     }
     private void addUser()
     {
         navigation.NavigateTo("/add-user");
     }
 
-
+    private string GetImageSrc(byte[] imageBytes)
+    {
+        var base64 = Convert.ToBase64String(imageBytes);
+        return $"data:image/png;base64,{base64}";
+    }
 }
